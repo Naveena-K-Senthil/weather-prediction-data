@@ -43,7 +43,7 @@ spec:
             def get_data_test(output_path):
                 import urllib.request
                 print("starting download...")
-                url = "https://github.com/Naveena-K-Senthil/weather-prediction-data/blob/main/data/jfk_weather.csv"
+                url = "https://github.com/Naveena-K-Senthil/weather-prediction-data/raw/main/data/jfk_weather.csv"
                 urllib.request.urlretrieve(url, output_path)
                 print("done")
 
@@ -63,4 +63,4 @@ spec:
             pipelines.kubeflow.org/cache_enabled: "true"
           annotations:
             pipelines.kubeflow.org/component_spec_digest: '{"name": "Get data test",
-              "outputs": [{"name": "output"}], "version": "Get data test@sha256=fb02907820de5f084b717c5051ec9741d89a4f6701bf09c896625c1504f770a6"}'
+              "outputs": [{"name": "output"}], "version": "Get data test@sha256=4e3072598b3a519f934d533f4690c16c3d0b96565784b46501262ce9f439503f"}'
