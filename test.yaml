@@ -1,0 +1,66 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: train-upload-stock-kfp
+  annotations:
+    tekton.dev/output_artifacts: '{"get-data-test": [{"key": "artifacts/$PIPELINERUN/get-data-test/output.tgz",
+      "name": "get-data-test-output", "path": "/tmp/outputs/output/data"}]}'
+    tekton.dev/input_artifacts: '{}'
+    tekton.dev/artifact_bucket: mlpipeline
+    tekton.dev/artifact_endpoint: minio-service.kubeflow:9000
+    tekton.dev/artifact_endpoint_scheme: http://
+    tekton.dev/artifact_items: '{"get-data-test": [["output", "$(results.output.path)"]]}'
+    sidecar.istio.io/inject: "false"
+    tekton.dev/template: ''
+    pipelines.kubeflow.org/big_data_passing_format: $(workspaces.$TASK_NAME.path)/artifacts/$ORIG_PR_NAME/$TASKRUN_NAME/$TASK_PARAM_NAME
+    pipelines.kubeflow.org/pipeline_spec: '{"name": "train_upload_stock_kfp"}'
+  labels:
+    pipelines.kubeflow.org/pipelinename: ''
+    pipelines.kubeflow.org/generation: ''
+spec:
+  pipelineSpec:
+    tasks:
+    - name: get-data-test
+      taskSpec:
+        steps:
+        - name: main
+          args:
+          - --output
+          - $(results.output.path)
+          command:
+          - sh
+          - -ec
+          - |
+            program_path=$(mktemp)
+            printf "%s" "$0" > "$program_path"
+            python3 -u "$program_path" "$@"
+          - |
+            def _make_parent_dirs_and_return_path(file_path: str):
+                import os
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                return file_path
+
+            def get_data_test(output_path):
+                import urllib.request
+                print("starting download...")
+                url = "https://raw.githubusercontent.com/Naveena-K-Senthil/weather-prediction-data/main/jfk_weather.csv"
+                urllib.request.urlretrieve(url, output_path)
+                print("done")
+
+            import argparse
+            _parser = argparse.ArgumentParser(prog='Get data test', description='')
+            _parser.add_argument("--output", dest="output_path", type=_make_parent_dirs_and_return_path, required=True, default=argparse.SUPPRESS)
+            _parsed_args = vars(_parser.parse_args())
+
+            _outputs = get_data_test(**_parsed_args)
+          image: quay.io/modh/runtime-images:runtime-cuda-tensorflow-ubi9-python-3.9-2023a-20230817-b7e647e
+        results:
+        - name: output
+          type: string
+          description: /tmp/outputs/output/data
+        metadata:
+          labels:
+            pipelines.kubeflow.org/cache_enabled: "true"
+          annotations:
+            pipelines.kubeflow.org/component_spec_digest: '{"name": "Get data test",
+              "outputs": [{"name": "output"}], "version": "Get data test@sha256=86518434db04ee5e262f1a062a07838c21a8156edb61e4b80e3f079aa2262266"}'
